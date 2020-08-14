@@ -4,14 +4,15 @@ import os
 import re
 import subprocess
 import time
-os_type=os.uname().version
+os_type = os.uname().version
 conf = configparser.ConfigParser()
 pkg = 'apt-get'
-pkgmode='install'
-wget='wget'
-aptkey='apt-key'
-addrepo=' add-apt-repository '
-pathnginx='/etc/apt/sources.list.d/nginxpy.list'
+pkgmode = 'install'
+wget = 'wget'
+aptkey = 'apt-key'
+addrepo = ' add-apt-repository '
+pathnginx = '/etc/apt/sources.list.d/nginxpy.list'
+
 
 def configuration():
     global nginxstate
@@ -40,96 +41,113 @@ def configuration():
     global nginxconfsectag
     global nginxconfclientbodysize
     global nginxconfgzip
-    conf.add_section("nginx")
-    conf.set('nginx', 'state-nginx', 'True')
-    conf.set('nginx','app','nginx')
-    conf.set('nginx', 'repo', 'deb  [arch=amd64]  http://nginx.org/packages/mainline/ubuntu/  bionic  nginx , deb-src http://nginx.org/packages/mainline/ubuntu/ bionic nginx')
-    conf.set('nginx','key',' http://nginx.org/keys/nginx_signing.key')
-    conf.add_section("php")
-    conf.set('php', 'state-php', 'True')
-    conf.set('php','repo-php',' ppa:ondrej/php')
-    conf.set('php', 'app', 'php7.3')
-    conf.add_section("php-fpm")
-    conf.set('php-fpm', 'state-phpfpm', 'True')
-    conf.set('php-fpm', 'app', 'php7.3-fpm')
-    conf.add_section("php-modules")
-    conf.set('php-modules', 'state-phpmodules', 'True')
-    conf.set('php-modules', 'names', 'php7.3,php7.3-bcmath,php7.3-cli,php7.3-common,php7.3-curl,php7.3-dev,php7.3-fpm,php7.3-gd,php7.3-imap,php7.3-intl,php7.3-json,php7.3-mbstring,php7.3-mysql,php7.3-opcache,php7.3-readline,php7.3-recode,php7.3-soap,php7.3-tidy,php7.3-xml,php7.3-xmlrpc,php7.3-zip')
-    conf.add_section("Dockerize")
-    conf.set('Dockerize', 'state-Dockerize', 'False')
-    conf.add_section('nginx.conf')
-    conf.set('nginx.conf','state','True')
-    conf.set('nginx.conf','user','www-data')
-    conf.set('nginx.conf','sectag','True')
-    conf.set('nginx.conf','maxclientbodysize','32M')
-    conf.set('nginx.conf','gzip','True')
-    conf.add_section('vhost')
-    conf.set('vhost','state','True')
-    conf.set('vhost','ssl','True')
-    conf.set('vhost','port','443')
-    conf.set('vhost','hostname','example')
-    conf.set('vhost', 'hostpath', '/var/www/html')
-    conf.set('vhost','remoteaddr','192.168.10.0/24')
-    conf.set('vhost','ssl_certificate','/etc/ssl/full.crt')
-    conf.set('vhost','ssl_certificate_key','/etc/ssl/privkey.key')
-    with open('config.cfg','w') as configfile:
-        conf.write(configfile)
-    #read
+    if os.path.exists('config.cfg'):
+            print('##config.cfg is exist##')
+    else:
+        conf.add_section("nginx")
+        conf.set('nginx', 'state-nginx', 'True')
+        conf.set('nginx', 'app', 'nginx')
+        conf.set('nginx', 'repo',
+             'deb  [arch=amd64]  http://nginx.org/packages/mainline/ubuntu/  bionic  nginx , deb-src http://nginx.org/packages/mainline/ubuntu/ bionic nginx')
+        conf.set('nginx', 'key', ' http://nginx.org/keys/nginx_signing.key')
+        conf.add_section("php")
+        conf.set('php', 'state-php', 'True')
+        conf.set('php', 'repo-php', ' ppa:ondrej/php')
+        conf.set('php', 'app', 'php7.3')
+        conf.add_section("php-fpm")
+        conf.set('php-fpm', 'state-phpfpm', 'True')
+        conf.set('php-fpm', 'app', 'php7.3-fpm')
+        conf.add_section("php-modules")
+        conf.set('php-modules', 'state-phpmodules', 'True')
+        conf.set('php-modules', 'names',
+             'php7.3,php7.3-bcmath,php7.3-cli,php7.3-common,php7.3-curl,php7.3-dev,php7.3-fpm,php7.3-gd,php7.3-imap,php7.3-intl,php7.3-json,php7.3-mbstring,php7.3-mysql,php7.3-opcache,php7.3-readline,php7.3-recode,php7.3-soap,php7.3-tidy,php7.3-xml,php7.3-xmlrpc,php7.3-zip')
+        conf.add_section("Dockerize")
+        conf.set('Dockerize', 'state-Dockerize', 'False')
+        conf.add_section('nginx.conf')
+        conf.set('nginx.conf', 'state', 'True')
+        conf.set('nginx.conf', 'user', 'www-data')
+        conf.set('nginx.conf', 'sectag', 'True')
+        conf.set('nginx.conf', 'maxclientbodysize', '32M')
+        conf.set('nginx.conf', 'gzip', 'True')
+        conf.add_section('vhost')
+        conf.set('vhost', 'state', 'True')
+        conf.set('vhost', 'ssl', 'True')
+        conf.set('vhost', 'port', '443')
+        conf.set('vhost', 'hostname', 'example')
+        conf.set('vhost', 'hostpath', '/var/www/html')
+        conf.set('vhost', 'remoteaddr', '192.168.10.0/24')
+        conf.set('vhost', 'ssl_certificate', '/etc/ssl/full.crt')
+        conf.set('vhost', 'ssl_certificate_key', '/etc/ssl/privkey.key')
+        with open('config.cfg', 'w') as configfile:
+            conf.write(configfile)
+    # read
+    conf.read('config.cfg')
     nginxstate = str(conf.get('nginx', 'state-nginx')).split(',')
     nginx = str(conf.get('nginx', 'app')).split(',')
-    phpstate=  str(conf.get('php', 'state-php')).split(',')
-    phpfpmstate= str(conf.get('php-fpm', 'state-phpfpm')).split(',')
-    phpmodulestate=str(conf.get('php-modules', 'state-phpmodules')).split(',')
-    dockerizestate= str(conf.get('Dockerize', 'state-Dockerize')).split(',')
-    reponginx= str(conf.get('nginx', 'repo')).split(',')
-    keynginx=str(conf.get('nginx', 'key')).split(',')
-    phprepo=str(conf.get('php', 'repo-php')).split(',')
-    phpversion=str(conf.get('php', 'app')).split(',')
-    phpfpmv=str(conf.get('php-fpm', 'app')).split(',')
-    phpm=str(conf.get('php-modules', 'names')).split(',')
-    vhoststate=str(conf.get('vhost', 'state')).split(',')
-    vhostsslstate=str(conf.get('vhost', 'ssl')).split(',')
-    vhostport=str(conf.get('vhost', 'port')).split(',')
-    vhosthost=str(conf.get('vhost', 'hostname')).split(',')
-    vhostpath=str(conf.get('vhost', 'hostpath')).split(',')
-    vhostremoteaddr=str(conf.get('vhost', 'remoteaddr')).split(',')
-    vhostssl=str(conf.get('vhost', 'ssl_certificate')).split(',')
-    vhostsslkey=str(conf.get('vhost', 'ssl_certificate_key')).split(',')
-    nginxconfstate=str(conf.get('nginx.conf', 'state')).split(',')
-    nginxconfuser=str(conf.get('nginx.conf', 'user')).split(',')
-    nginxconfsectag=str(conf.get('nginx.conf', 'sectag')).split(',')
-    nginxconfclientbodysize=str(conf.get('nginx.conf', 'maxclientbodysize')).split(',')
-    nginxconfgzip=str(conf.get('nginx.conf', 'gzip')).split(',')
+    phpstate = str(conf.get('php', 'state-php')).split(',')
+    phpfpmstate = str(conf.get('php-fpm', 'state-phpfpm')).split(',')
+    phpmodulestate = str(conf.get('php-modules', 'state-phpmodules')).split(',')
+    dockerizestate = str(conf.get('Dockerize', 'state-Dockerize')).split(',')
+    reponginx = str(conf.get('nginx', 'repo')).split(',')
+    keynginx = str(conf.get('nginx', 'key')).split(',')
+    phprepo = str(conf.get('php', 'repo-php')).split(',')
+    phpversion = str(conf.get('php', 'app')).split(',')
+    phpfpmv = str(conf.get('php-fpm', 'app')).split(',')
+    phpm = str(conf.get('php-modules', 'names')).split(',')
+    vhoststate = str(conf.get('vhost', 'state')).split(',')
+    vhostsslstate = str(conf.get('vhost', 'ssl')).split(',')
+    vhostport = str(conf.get('vhost', 'port')).split(',')
+    vhosthost = str(conf.get('vhost', 'hostname')).split(',')
+    vhostpath = str(conf.get('vhost', 'hostpath')).split(',')
+    vhostremoteaddr = str(conf.get('vhost', 'remoteaddr')).split(',')
+    vhostssl = str(conf.get('vhost', 'ssl_certificate')).split(',')
+    vhostsslkey = str(conf.get('vhost', 'ssl_certificate_key')).split(',')
+    nginxconfstate = str(conf.get('nginx.conf', 'state')).split(',')
+    nginxconfuser = str(conf.get('nginx.conf', 'user')).split(',')
+    nginxconfsectag = str(conf.get('nginx.conf', 'sectag')).split(',')
+    nginxconfclientbodysize = str(conf.get('nginx.conf', 'maxclientbodysize')).split(',')
+    nginxconfgzip = str(conf.get('nginx.conf', 'gzip')).split(',')
 
-    list=[nginx,nginxstate,phpstate,phpfpmstate,phpmodulestate,dockerizestate,phpm]
+    list = [nginx, nginxstate, phpstate, phpfpmstate, phpmodulestate, dockerizestate, phpm]
+
+
 def checkapp():
-    os=re.findall('ubuntu', os_type, re.IGNORECASE) ; os=str(os).replace('[',' ').replace("'",' ').replace(']','').lower()
+    os = re.findall('ubuntu', os_type, re.IGNORECASE);
+    os = str(os).replace('[', ' ').replace("'", ' ').replace(']', '').lower()
     if 'ubuntu' not in os:
         print('your os is {user_os} ,this script does work only in ubuntu'.format(user_os=os_type))
         exit()
-    #if 'True' in nginxstate or phpstate or phpfpmstate or phpmodulestate or dockerizestate :
-    for j in range (len(list)):
-            for i in range (len(list[j])):
-                if phpstate[0] == 'True' or phpfpmstate[0] =='True' or nginxstate[0] =='True' or phpmodulestate[0]=='True':
-                    check=subprocess.run(['which', '{app}'.format(app=list[j][i])],stdout=subprocess.DEVNULL)
-                    if check.returncode != 0 and list[j][i] != 'True' and list[j][i] != 'False':
-                         print('not found {app} '.format(app=list[j][i]))
+    # if 'True' in nginxstate or phpstate or phpfpmstate or phpmodulestate or dockerizestate :
+    for j in range(len(list)):
+        for i in range(len(list[j])):
+            if phpstate[0] == 'True' or phpfpmstate[0] == 'True' or nginxstate[0] == 'True' or phpmodulestate[
+                0] == 'True':
+                check = subprocess.run(['which', '{app}'.format(app=list[j][i])], stdout=subprocess.DEVNULL)
+                if check.returncode != 0 and list[j][i] != 'True' and list[j][i] != 'False':
+                    print('not found {app} '.format(app=list[j][i]))
+
+
 def install():
     if nginxstate[0] == 'True':
-         subprocess.Popen([wget ,'-P','/tmp', keynginx[0]])
-         print('\n\n\n\nDownloading nginx-key...\n')
-         time.sleep(10)
-         subprocess.Popen(["mv /tmp/ng*.key /tmp/nginx.key"],shell=True)
-         subprocess.Popen(["echo {reponginx} > {pathnginx}".format(pathnginx=pathnginx , reponginx=reponginx[0])],shell=True)
-         subprocess.Popen(["echo {reponginx} >> {pathnginx}".format(pathnginx=pathnginx , reponginx=reponginx[1])],shell=True)
-         subprocess.Popen([pkg, 'update', '-y'])
-         subprocess.Popen([pkg, pkgmode, 'nginx', '-y'])
+        subprocess.Popen([wget, '-P', '/tmp', keynginx[0]])
+        print('\n\n\n\nDownloading nginx-key...\n')
+        time.sleep(10)
+        subprocess.Popen(["mv /tmp/ng*.key /tmp/nginx.key"], shell=True)
+        subprocess.Popen(["echo {reponginx} > {pathnginx}".format(pathnginx=pathnginx, reponginx=reponginx[0])],
+                         shell=True)
+        subprocess.Popen(["echo {reponginx} >> {pathnginx}".format(pathnginx=pathnginx, reponginx=reponginx[1])],
+                         shell=True)
+        subprocess.Popen([pkg, 'update', '-y'])
+        subprocess.Popen([pkg, pkgmode, 'nginx', '-y'])
     if phpstate[0] == 'True':
-        subprocess.Popen(["{addrepo}   {phprepo} -y".format(addrepo=addrepo , phprepo=phprepo[0])],shell=True)
-        for i in range (len(phpm)):
-            subprocess.Popen(["{pkg} {pkgmode} -y  {php} ".format(pkg=pkg, pkgmode=pkgmode,php=phpm[i])], shell=True)
+        subprocess.Popen(["{addrepo}   {phprepo} -y".format(addrepo=addrepo, phprepo=phprepo[0])], shell=True)
+        for i in range(len(phpm)):
+            subprocess.Popen(["{pkg} {pkgmode} -y  {php} ".format(pkg=pkg, pkgmode=pkgmode, php=phpm[i])], shell=True)
     if phpfpmstate[0] == 'True':
-        subprocess.Popen(["{pkg} {pkgmode} -y  {phpfpm} ".format(pkg=pkg, pkgmode=pkgmode, phpfpm=phpfpmv[0])], shell=True)
+        subprocess.Popen(["{pkg} {pkgmode} -y  {phpfpm} ".format(pkg=pkg, pkgmode=pkgmode, phpfpm=phpfpmv[0])],
+                         shell=True)
+
+
 def nginxconf():
     f = open('nginx.conf', "w")
     template = Template("""
@@ -157,7 +175,7 @@ location ~ /\.(?!well-known) {
     deny all;
 }
 {% endif %}
-    
+
     charset              utf-8;
     sendfile             on;
     tcp_nopush           on;
@@ -173,7 +191,7 @@ location ~ /\.(?!well-known) {
     # Logging
     access_log           /var/log/nginx/access.log;
     error_log            /var/log/nginx/error.log warn;
-            
+
  {%if gzip == 'on' %}
     # Gzip Settings
     gzip on;
@@ -223,8 +241,11 @@ location ~ /\.(?!well-known) {
     include              /etc/nginx/conf.d/*.conf;
     include              /etc/nginx/sites-enabled/*;
 }""")
-    f.write(template.render(user=nginxconfuser[0],sectag=nginxconfsectag[0],clientbodysize=nginxconfclientbodysize[0],gzip=nginxconfgzip[0]))
+    f.write(template.render(user=nginxconfuser[0], sectag=nginxconfsectag[0], clientbodysize=nginxconfclientbodysize[0],
+                            gzip=nginxconfgzip[0]))
     f.close()
+
+
 def vhostconf():
     f = open('{hostname}.conf'.format(hostname=vhosthost[0]), "w")
     template = Template("""
@@ -297,16 +318,42 @@ limit_req zone=dos burst=3 nodelay   ;
     f.close()
 
 
+# open_file_cache          max=2000 inactive=20s;
+# open_file_cache_valid    60s;
+# open_file_cache_min_uses 2;
+# open_file_cache_errors   off;
+def dockerize():
+    if dockerizestate[0] == 'True':
+        f = open('dockerfile-nginx', "w")
+        template = Template("""
+        FROM ubuntu
+        RUN apt-get update \
+        && apt-get install -y software-properties-common \
+        && apt-add-repository -y ppa:nginx/stable \
+        &&  add-apt-repository  -y ppa:ondrej/php \
+        && apt-get update \
+        && apt-get install -y nginx php7.3 php7.3-bcmath php7.3-cli php7.3-common php7.3-curl php7.3-dev php7.3-fpm php7.3-gd php7.3-imap php7.3-intl php7.3-json php7.3-mbstring php7.3-mysql php7.3-opcache php7.3-readline php7.3-recode php7.3-soap php7.3-tidy php7.3-xml php7.3-xmlrpc php7.3-zip \
+        && rm -rf /var/lib/apt/lists/*
+        #ADD nginx/nginx.conf /etc/nginx/nginx.conf
+        #ADD nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
 
+        #ADD data/www /data/www
 
-#open_file_cache          max=2000 inactive=20s;
-#open_file_cache_valid    60s;
-#open_file_cache_min_uses 2;
-#open_file_cache_errors   off;
+        RUN rm /etc/nginx/sites-enabled/default
 
+        RUN ln -sf /dev/stdout /var/log/nginx/access.log \
+        && ln -sf /dev/stderr /var/log/nginx/error.log
 
+        EXPOSE 80 443
+
+        CMD ["nginx", "-g", "daemon off;"]    
+    
+""" )
+        f.write(template.render())
+        f.close()
 configuration()
 vhostconf()
 nginxconf()
-#checkapp()
-#install()
+dockerize()
+# checkapp()
+# install()
